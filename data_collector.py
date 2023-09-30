@@ -51,19 +51,20 @@ class DataCollector:
         historicos_df = pd.concat(historicos_list, axis=0).reset_index() # Concatenacao dos dataframes
         return historicos_df # Retorno do dataframe
 
-    def to_google_storage(self, *dataframes): 
-        for i, df in enumerate(dataframes, start=1): # Loop para salvar os dataframes
-            file_name = f'dataframe_{i}.csv' # Nome do arquivo
-            df.to_csv(file_name, index=False) # Salvando o dataframe
-            blob = self.bucket.blob(file_name) # Blob
-            blob.upload_from_filename(file_name) # Upload do arquivo no bucket
+    def to_google_storage(self, *dataframes, func_names): 
+        for df, func_name in zip(dataframes, func_names):  # Loop para salvar os dataframes
+            file_name = f'df_{func_name}.csv'  # Nome do arquivo
+            df.to_csv(file_name, index=False)  # Salvando o dataframe
+            blob = self.bucket.blob(file_name)  # Blob
+            blob.upload_from_filename(file_name)  # Upload do arquivo no bucket
 
     def run(self):
         cdi_df = self.get_cdi()
         stocks_df = self.get_stocks() 
         stocks_info_df = self.get_stocks_info(stocks_df)
         stocks_historic_df = self.get_stocks_historic(stocks_df['symbol'])
-        self.to_google_storage(cdi_df, stocks_df, stocks_info_df, stocks_historic_df)
+        func_names = ['get_cdi', 'get_stocks', 'get_stocks_info', 'get_stocks_historic']
+        self.to_google_storage(cdi_df, stocks_df, stocks_info_df, stocks_historic_df, func_names=func_names)
 
 if __name__ == "__main__":
     data_collector = DataCollector('sprint3-storage') # Nome do bucket

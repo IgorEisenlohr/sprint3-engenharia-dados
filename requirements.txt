@@ -8,3 +8,4 @@ requests
 datetime
 google-cloud-bigquery
 google-cloud-storage
+pandas-gbq
