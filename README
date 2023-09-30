@@ -1,0 +1,16 @@
+A ideia do projeto para a Sprint 3 (Engenharia de dados) da Pós graduação em Ciência de dados da PUC-RIO:
+
+Coletar registros de ativos do mercado financeiro
+Coletar Informações sobre os ativos
+Coletar preços dos últimos 2 anos sobre os ativos
+
+Carregar como 3 arquivos .csv distintos para um bucket do google-cloud
+
+Utilizar o ETL para pegar os arquivos do bucket -> aplicar as transformações necessárias -> carregar no bigquery
+
+Realizar consultas que respondam alguns objetivos:
+
+Qual ativo apresentou maior rentabilidade em 2022? E a menor?
+Quantos ativos superaram o CDI em 2022?
+Qual ativo mais pagou dividendos?
+Qual setor apresenta mais

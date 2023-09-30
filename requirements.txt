@@ -1,0 +1,10 @@
+pandas
+yfinance
+investpy
+numpy
+matplotlib
+seaborn
+requests
+datetime
+google-cloud-bigquery
+google-cloud-storage
