@@ -1,4 +1,4 @@
-country,name,full_name,isin,currency,symbol
+country,name,full_name,isin,currency,ticker
 brazil,ABC BRASIL PN,Banco ABC Brasil SA,BRABCBACNPR4,BRL,ABCB4.SA
 brazil,BRASILAGRO ON,BrasilAgro - Co ON NM,BRAGROACNOR7,BRL,AGRO3.SA
 brazil,RUMO ON NM,RUMO Logistica Operadora Multimodal SA,BRRAILACNOR9,BRL,RAIL3.SA
