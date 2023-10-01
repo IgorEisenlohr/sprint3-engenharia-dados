@@ -28,9 +28,9 @@ class MetadataTableCreator:
             bigquery.SchemaField("day", "INTEGER", mode="NULLABLE", description="Dia do mês da cotação."),
             bigquery.SchemaField("close", "FLOAT", mode="REQUIRED", description="Preço de fechamento da cotação."),
             bigquery.SchemaField("volume", "FLOAT", mode="NULLABLE", description="Volume de negociação."),
-            bigquery.SchemaField("daily_factor", "DOUBLE", mode="NULLABLE", description="Variação diária do ativo em número índice (1 + variação)."),
-            bigquery.SchemaField("month_accumulated_factor", "DOUBLE", mode="NULLABLE", description="Acumulado mensal da variação."),
-            bigquery.SchemaField("year_accumulated_factor", "DOUBLE", mode="NULLABLE", description="Acumulado anual da variação.")
+            bigquery.SchemaField("daily_factor", "FLOAT64", mode="NULLABLE", description="Variação diária do ativo em número índice (1 + variação)."),
+            bigquery.SchemaField("month_accumulated_factor", "FLOAT64", mode="NULLABLE", description="Acumulado mensal da variação."),
+            bigquery.SchemaField("year_accumulated_factor", "FLOAT64", mode="NULLABLE", description="Acumulado anual da variação.")
         ]
 
 

@@ -40,7 +40,7 @@ class DataCollector:
         return acoes_df # Retorno do dataframe
 
     def get_stocks_info(self, acoes_df):
-        tickers = acoes_df['ticker'] # Lista de tickers
+        tickers = acoes_df['ticker'][:10] # Lista de tickers
         tickers_info_list = [] # Lista vazia para armazenar os dados
         for ticker in tickers: # Loop para coletar os dados de cada ticker
             try:
@@ -74,7 +74,7 @@ class DataCollector:
         cdi_df = self.get_cdi()
         stocks_df = self.get_stocks() 
         stocks_info_df = self.get_stocks_info(stocks_df)
-        stocks_historic_df = self.get_stocks_historic(stocks_df['ticker'].tolist())
+        stocks_historic_df = self.get_stocks_historic(stocks_df['ticker'].tolist()[:10])
 
         func_names = ['get_cdi', 'get_stocks', 'get_stocks_info', 'get_stocks_historic'] # Lista com os nomes das funcoes
         self.to_google_storage(cdi_df, stocks_df, stocks_info_df, stocks_historic_df, func_names=func_names) # Salvando os dataframes no bucket
@@ -165,9 +165,9 @@ class DataCollector:
             bigquery.SchemaField("ticker", "STRING", mode="REQUIRED"),
             bigquery.SchemaField("close", "FLOAT", mode="REQUIRED"),
             bigquery.SchemaField("volume", "FLOAT", mode="NULLABLE"),
-            bigquery.SchemaField("daily_factor", "DOUBLE", mode="NULLABLE"),
-            bigquery.SchemaField("month_accumulated_factor", "DOUBLE", mode="NULLABLE"),
-            bigquery.SchemaField("year_accumulated_factor", "DOUBLE", mode="NULLABLE")
+            bigquery.SchemaField("daily_factor", "FLOAT64", mode="NULLABLE"),
+            bigquery.SchemaField("month_accumulated_factor", "FLOAT64", mode="NULLABLE"),
+            bigquery.SchemaField("year_accumulated_factor", "FLOAT64", mode="NULLABLE")
         ]
 
         # Conversão para lista de dicionários
