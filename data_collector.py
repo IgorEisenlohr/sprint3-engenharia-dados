@@ -10,6 +10,7 @@ import yfinance as yf
 import os
 from google.cloud import storage
 from google.oauth2 import service_account
+from google.cloud import bigquery
 
 # Classe para ETL
 class DataCollector:
@@ -26,7 +27,7 @@ class DataCollector:
         cdi['ano'] = cdi['data'].dt.year # Criacao da coluna ano
         cdi.rename(columns={'data': 'date'}, inplace=True) # Renomeacao da coluna data para Date
         cdi['ticker'] = 'CDI' # Criacao da coluna Ticker
-        cdi['daily_variation'] = cdi['valor'] # Criacao da coluna Close
+        cdi['daily_variation'] = cdi['valor']/100 # Criacao da coluna daily_variation
         cdi = cdi.query('ano >= 2022') # Filtragem dos dados a partir de 2021
         cdi_df = cdi[['date', 'ticker','daily_variation']] # Selecao das colunas
 
@@ -130,14 +131,47 @@ class DataCollector:
             'sprint3-storage.json'
         ) # Credenciais do Google Cloud
 
+        cadastro_schema = [
+            bigquery.SchemaField("country", "STRING", mode="NULLABLE"  ),
+            bigquery.SchemaField("name", "STRING", mode="NULLABLE"     ),
+            bigquery.SchemaField("full_name", "STRING", mode="NULLABLE"),
+            bigquery.SchemaField("isin", "STRING", mode="NULLABLE"     ),
+            bigquery.SchemaField("currency", "STRING", mode="NULLABLE" ),
+            bigquery.SchemaField("ticker", "STRING", mode="REQUIRED"   ),
+            bigquery.SchemaField("city", "STRING", mode="NULLABLE"     ),
+            bigquery.SchemaField("state", "STRING", mode="NULLABLE"    ),
+            bigquery.SchemaField("industry", "STRING", mode="NULLABLE" ),
+            bigquery.SchemaField("sector", "STRING", mode="NULLABLE"   )
+        ]
+
+        # Conversão para lista de dicionários
+        cadastro_schema_dicts = [{'name': field.name, 'type': field.field_type, 'mode': field.mode} for field in cadastro_schema]
+
         # Carregar o dataframe cadastro_info_df no BigQuery
         pandas_gbq.to_gbq(
             cadastro_info_df,
             f"{dataset_name}.{cadastro_table_name}",
             project_id='bigquery-sandbox-385813',
             if_exists='replace',
+            table_schema=cadastro_schema_dicts,
             credentials=credentials
         )
+
+        prices_schema = [
+            bigquery.SchemaField("date", "STRING", mode="REQUIRED" ),
+            bigquery.SchemaField("year", "INTEGER", mode="NULLABLE"),
+            bigquery.SchemaField("month", "INTEGER", mode="NULLABLE"),
+            bigquery.SchemaField("day", "INTEGER", mode="NULLABLE" ),
+            bigquery.SchemaField("ticker", "STRING", mode="REQUIRED"),
+            bigquery.SchemaField("close", "FLOAT", mode="REQUIRED"),
+            bigquery.SchemaField("volume", "FLOAT", mode="NULLABLE"),
+            bigquery.SchemaField("daily_factor", "DOUBLE", mode="NULLABLE"),
+            bigquery.SchemaField("month_accumulated_factor", "DOUBLE", mode="NULLABLE"),
+            bigquery.SchemaField("year_accumulated_factor", "DOUBLE", mode="NULLABLE")
+        ]
+
+        # Conversão para lista de dicionários
+        prices_schema_dicts = [{'name': field.name, 'type': field.field_type, 'mode': field.mode} for field in prices_schema]
 
         # Carregar o dataframe prices_df no BigQuery
         pandas_gbq.to_gbq(
@@ -145,6 +179,7 @@ class DataCollector:
             f"{dataset_name}.{prices_table_name}",
             project_id='bigquery-sandbox-385813',
             if_exists='replace',
+            table_schema=prices_schema_dicts,
             credentials=credentials
         )
 
