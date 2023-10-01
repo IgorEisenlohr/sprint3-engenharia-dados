@@ -1,3 +1,7 @@
+# Description: Script para coleta, transformacao e carregamento de dados
+# Author: Igor Miranda Eisenlohr
+
+# Importacao das bibliotecas
 import pandas as pd
 import pandas_gbq
 import numpy as np
@@ -7,6 +11,7 @@ import os
 from google.cloud import storage
 from google.oauth2 import service_account
 
+# Classe para ETL
 class DataCollector:
     def __init__(self, bucket_name):
         os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'sprint3-storage.json' # Credenciais do Google Cloud
@@ -48,17 +53,13 @@ class DataCollector:
     def get_stocks_historic(self, tickers):
         historicos_list = []  # Lista vazia para armazenar os dados
         for ticker in tickers:  # Loop para coletar os dados de cada ticker
-            historico = yf.download(ticker, period='2y')  # Coleta dos dados
+            historico = yf.download(ticker, start="2022-01-03")  # Coleta dos dados
             historico['Ticker'] = ticker  # Adicao da coluna Ticker
             historicos_list.append(historico)  # Adicao do dataframe na lista
         historicos_df = pd.concat(historicos_list) # Transformacao da lista em dataframe
         historicos_df.reset_index(inplace=True) # Reset do index
         historicos_df.rename(columns=str.lower, inplace=True) # Renomeacao das colunas
-        return historicos_df[['date', 'year', 'month',
-                              'day', 'ticker', 'close',
-                              'volume', 'daily_factor',
-                              'month_accumulated_variation',
-                              'year_accumulated_variation']]  # Retorno do dataframe
+        return historicos_df[['date', 'ticker','close', 'volume']]  # Retorno do dataframe
 
     def to_google_storage(self, *dataframes, func_names): 
         for df, func_name in zip(dataframes, func_names):  # Loop para salvar os dataframes
@@ -93,7 +94,6 @@ class DataCollector:
         cadastro_df = pd.merge(cadastro_cleaned_df, info_df, on='ticker', how='left') # Merge dos dataframes de cadastro e informações
         cadastro_df_cleaned = cadastro_df.drop(columns='country_y').rename(columns={'country_x': 'country'}) # Renomeacao da coluna country
 
-        # historic_df['date'] = pd.to_datetime(historic_df['date']).dt.tz_localize(None).dt.strftime('%Y-%m-%d')
         cdi_df['date'] = pd.to_datetime(cdi_df['date']).dt.strftime('%Y-%m-%d')
 
         prices_df = pd.concat([historic_df, cdi_df], ignore_index=True) # Uniao dos dataframes de historico de stocks e CDI
@@ -106,20 +106,16 @@ class DataCollector:
         prices_df_cleaned['prev_close'] = prices_df_cleaned.groupby('ticker')['close'].shift(1) # Criacao da coluna Prev_Close
         prices_df_cleaned['daily_factor'] = (prices_df_cleaned['close'] / prices_df_cleaned['prev_close']).fillna(1) # Criacao da coluna Daily_Factor
 
-        # Extraindo o ano, mês e dia
-        prices_df_cleaned['date'] = pd.to_datetime(prices_df_cleaned['date'])
-        prices_df_cleaned['year'] = prices_df_cleaned['date'].dt.year
-        prices_df_cleaned['month'] = prices_df_cleaned['date'].dt.month
-        prices_df_cleaned['day'] = prices_df_cleaned['date'].dt.day
+        prices_df_cleaned['date'] = pd.to_datetime(prices_df_cleaned['date']) # Conversao da coluna Date para datetime
+        prices_df_cleaned['year'] = prices_df_cleaned['date'].dt.year # Criacao da coluna Year
+        prices_df_cleaned['month'] = prices_df_cleaned['date'].dt.month # Criacao da coluna Month
+        prices_df_cleaned['day'] = prices_df_cleaned['date'].dt.day # Criacao da coluna Day
 
-        # Calculando a variação diária
-        prices_df_cleaned['daily_variation'] = prices_df_cleaned.groupby('ticker')['close'].transform(lambda x: x / x.shift(1) - 1) 
+        is_not_cdi = prices_df_cleaned['ticker'] != 'CDI' # Filtro para selecionar apenas os tickers que nao sao CDI
+        prices_df_cleaned.loc[is_not_cdi, 'daily_variation'] = prices_df_cleaned.loc[is_not_cdi].groupby('ticker')['close'].transform(lambda x: x / x.shift(1) - 1) # Calculando a variacao diaria
 
-        # Calculando a variação acumulada mensal
-        prices_df_cleaned['month_accumulated_variation'] = prices_df_cleaned.groupby(['ticker', 'year', 'month'])['daily_variation'].transform(lambda x: (x + 1).cumprod() - 1) * 100
-        
-        # Calculando a variação acumulada anual
-        prices_df_cleaned['year_accumulated_variation'] = prices_df_cleaned.groupby(['ticker', 'year'])['daily_variation'].transform(lambda x: (x + 1).cumprod() - 1) * 100
+        prices_df_cleaned['month_accumulated_variation'] = prices_df_cleaned.groupby(['ticker', 'year', 'month'])['daily_variation'].transform(lambda x: (x + 1).cumprod() - 1) * 100 # Calculando a variação acumulada mensal
+        prices_df_cleaned['year_accumulated_variation'] = prices_df_cleaned.groupby(['ticker', 'year'])['daily_variation'].transform(lambda x: (x + 1).cumprod() - 1) * 100 # Calculando a variação acumulada anual
          
         prices_df_cleaned['date'] = prices_df_cleaned['date'].astype(str)  # Conversao da coluna Date para string
 
